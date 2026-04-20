@@ -1,0 +1,14 @@
+name: Git Actions Test
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test_architecture:
+    runs-on: ubuntu-24.04-arm
+    steps: 
+      - name: Verify
+        run: |
+            uname -a
+        shell: bash
