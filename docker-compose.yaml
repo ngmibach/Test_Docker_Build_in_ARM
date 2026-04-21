@@ -1,6 +1,6 @@
 services:
   test_build:
-    image: mibach/ros2_base_deployment:stable
+    image: mibach/ros2_base_deployment:stable-${ARCH}
     build:
       context: build
       dockerfile: Dockerfile

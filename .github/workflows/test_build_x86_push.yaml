@@ -18,5 +18,6 @@ jobs:
         
       - name: Docker Build and Push 
         run: |
-            docker compose build 
-            docker compose push 
+          export ARCH="x86"
+          docker compose build 
+          docker compose push 

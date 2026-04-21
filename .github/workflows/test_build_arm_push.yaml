@@ -18,5 +18,6 @@ jobs:
         
       - name: Docker Build and Push 
         run: |
-            docker compose build 
-            docker compose push 
+          export ARCH="arm"
+          docker compose build 
+          docker compose push 
