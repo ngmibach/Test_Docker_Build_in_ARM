@@ -1,6 +1,6 @@
 services:
   test_build:
-    image: mibach/test_build_docker_arm/ros2:latest
+    image: mibach/test_ros2_arm:latest
     build:
       context: build
       dockerfile: Dockerfile
