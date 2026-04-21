@@ -1,4 +1,4 @@
-name: Git Actions Test
+name: Git Actions Build and Push to Gitea Repository
 on:
 #   push:
 #     branches:
