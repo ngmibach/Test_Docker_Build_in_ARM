@@ -1,7 +1,7 @@
 name: Git Actions Test
 on:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 jobs:
