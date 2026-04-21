@@ -1,6 +1,6 @@
 services:
   test_build:
-    image: mibach/ros2_base_deployment:latest
+    image: mibach/ros2_base_deployment:stable
     build:
       context: build
       dockerfile: Dockerfile
