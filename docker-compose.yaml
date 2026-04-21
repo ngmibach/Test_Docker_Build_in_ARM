@@ -1,0 +1,6 @@
+services:
+  test_build:
+    image: coder-harbor.hc.apac.bosch.com:5000/robotic_test/test_build:latest
+    build:
+      context: build
+      dockerfile: Dockerfile
