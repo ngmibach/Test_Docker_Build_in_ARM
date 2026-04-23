@@ -113,7 +113,7 @@ jobs:
           fi
 
       - name: Upload Trivy table artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: scan-result-table
           path: ./${{ env.application_name }}.txt
