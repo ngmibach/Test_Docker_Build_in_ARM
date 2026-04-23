@@ -107,9 +107,9 @@ jobs:
               cat "${{ env.application_name }}.txt"
               echo '```'
               echo "</details>"
-            } >> $GITEA_STEP_SUMMARY
+            } >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "No Trivy table output generated." >> $GITEA_STEP_SUMMARY
+            echo "No Trivy table output generated." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload Trivy table artifact
