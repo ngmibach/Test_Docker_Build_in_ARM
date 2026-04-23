@@ -20,4 +20,129 @@ jobs:
         run: |
           export ARCH="x86"
           docker compose build 
-          docker compose push 
+      
+      - name: Set Output File Name 
+        run: |
+          set -euo pipefail
+
+          app="trivy_${{ github.ref_name }}"
+          echo "application_name=$app" >> $GITHUB_ENV
+
+      - name: Set Image Name and Tag
+        run: |
+          set -euo pipefail
+          export ARCH="arm"
+          
+          docker compose build --print | jq -r '
+            .target |
+            to_entries[] |
+            "\(.key | gsub("-"; "_") | ascii_upcase)_IMAGE=\(.value.tags[0])"
+          ' >> $GITHUB_ENV
+
+          IMAGES=$(docker compose build --print | jq -r '
+            .target |
+            to_entries[] |
+            .value.tags[0]
+          ' | tr '\n' ' ' | xargs)
+
+          echo "IMAGES_TO_SCAN=$IMAGES" >> $GITHUB_ENV
+
+          echo "ARCH = ${ARCH}"
+          echo "IMAGES_TO_SCAN = ${IMAGES}"
+
+      - name: Pull Trivy Image
+        run: |
+          docker pull aquasec/trivy:0.69.3
+
+      - name: Run Trivy table output
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          output_file="${{ env.application_name }}.txt"
+
+          if [[ -z "${{ env.IMAGES_TO_SCAN }}" ]]; then
+            echo "ERROR: IMAGES_TO_SCAN is empty" >&2
+            exit 1
+          fi
+
+          for image in ${{ env.IMAGES_TO_SCAN }}; do
+            echo "=== Scanning $image ==="
+
+            tag=$(echo "$image" | cut -d':' -f2)
+            per_image_file="${{ env.application_name }}_${tag}.txt"
+
+            echo "Per-image output file: $per_image_file"
+
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              aquasec/trivy:0.69.3 image \
+              --format table \
+              --scanners vuln \
+              --vuln-type os,library \
+              --no-progress \
+              "$image" > $per_image_file
+
+            {
+              echo "========================================================================"
+              echo "=== SCAN RESULT FOR: $image ==="
+              echo "========================================================================"
+              echo
+              cat "$per_image_file"
+              echo
+              echo "========================================================================"
+              echo
+            } >> "${output_file}"
+          done
+
+      - name: Publish Trivy table to job summary
+        shell: bash
+        run: |
+          if [[ -s "${{ env.application_name }}.txt" ]]; then
+            {
+              echo "### Security Scan Output (Trivy)"
+              echo "<details><summary>Click to expand Trivy table</summary>"
+              echo
+              echo '```text'
+              cat "${{ env.application_name }}.txt"
+              echo '```'
+              echo "</details>"
+            } >> $GITEA_STEP_SUMMARY
+          else
+            echo "No Trivy table output generated." >> $GITEA_STEP_SUMMARY
+          fi
+
+      - name: Upload Trivy table artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: scan-result-table
+          path: ./${{ env.application_name }}.txt
+
+      - name: Trivy scan - fail on CRITICAL vulnerabilities
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${{ env.IMAGES_TO_SCAN }}" ]]; then
+            echo "ERROR: IMAGES_TO_SCAN is empty" >&2
+            exit 1
+          fi
+
+          for image in ${{ env.IMAGES_TO_SCAN }}; do
+
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              aquasec/trivy:0.69.3 image \
+              --exit-code 1 \
+              --severity CRITICAL \
+              --scanners vuln \
+              --no-progress \
+              "$image"
+          done
+
+      - name: Push to Deployment Docker Registry
+        run: |
+          export ARCH="x86"
+          docker compose push
+
+        
